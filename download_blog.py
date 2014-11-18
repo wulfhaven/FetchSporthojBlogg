@@ -1,11 +1,12 @@
+import datetime
+import re
 import string
 import sys
 import requests
 import bs4
+from twisted.web.resource import Resource
 
 LINK_PREFIX = 'http://www.sporthoj.com'
-
-__author__ = 'ulvhamne'
 
 post_links = []
 
@@ -30,8 +31,23 @@ def get_all_blog_urls(url: string) -> []:
     return blog_urls
 
 
+def fetch_all_data(post: Resource):
+    title = post.find(style='font-size: 18px').text
+    image_links = [LINK_PREFIX + link.attrs.get('href') for link in post.find_all(href=re.compile('/galleri/visabild'))]
+    text = post.find(style='font-size: 13px').text
+    time_text = post.find(id='publicerad').text
+    date_time_string = re.search(r'Tidpunkt:(.+)[|]', time_text).group(1).strip()
+    post_datetime = datetime.datetime.strptime(date_time_string, '%d / %m - %Y %H:%M').strftime('%y-%m-%d_%H:%M')
+
+
 def fetch_all_blog_posts(url: string):
-    pass
+    page = requests.get(url)
+    full_soup = bs4.BeautifulSoup(page.text)
+    for post in full_soup.find_all(id='inlagg')[0].children:
+        fetch_all_data(post)
+
+
+
 
 
 def main(argv):
