@@ -10,8 +10,7 @@ from bs4 import Tag
 LINK_PREFIX = 'http://www.sporthoj.com'
 IMG_URL = 'http://www.sporthoj.com/galleri/bild?id={0}&header=1'
 
-
-post_links = []
+post_monolith = []
 
 
 def get_all_blog_urls(url: string) -> []:
@@ -30,7 +29,7 @@ def download_images(post: Tag) -> None:
     image_links = [LINK_PREFIX + link.attrs.get('href') for link in post.find_all(href=re.compile('/galleri/visabild'))]
     for url in image_links:
         image_id = re.search(r'id=([0-9]+)[&]', url).group(1)
-        print('    Downloading file: ' + IMG_URL.format(image_id))
+        print('    Downloading image: ' + IMG_URL.format(image_id))
         r = requests.get(IMG_URL.format(image_id), stream=True)
         with open(image_id + '.jpg', 'wb') as fd:
             for chunk in r.iter_content(128):
@@ -62,6 +61,7 @@ def fetch_all_data(post: Tag):
     with open('post_text.txt', 'w+', encoding='utf-8') as post_text_file:
         post_text_file.write(text)
     chdir('..')
+    post_monolith.append((post_datetime, title + '\n' + text + '\n\n'))
 
 
 def fetch_all_blog_posts(url: string):
@@ -85,8 +85,14 @@ def main(argv):
         print("  " + url)
 
     for url in blog_urls:
-        print('Fetching :' + url)
+        print('Fetching: ' + url)
         fetch_all_blog_posts(url)
+
+    print('Saving all posts to monolith. ')
+    post_monolith.sort(key=lambda item: item[0])
+    with open('post_monolith.txt', 'w+', encoding='utf-8') as post_monolith_file:
+        for date_time, text in post_monolith:
+            post_monolith_file.write(date_time + ' - ' + text)
 
 
 if __name__ == "__main__":
